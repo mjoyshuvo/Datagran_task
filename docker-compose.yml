@@ -1,0 +1,47 @@
+version: '3.7'
+services:
+  app:
+    build: .
+    command: python -u app.py
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+    links:
+      - db
+    depends_on:
+      - rabbit
+  rabbit:
+    hostname: rabbit
+    image: rabbitmq:management
+    environment:
+      - RABBITMQ_DEFAULT_USER=rabbitmq
+      - RABBITMQ_DEFAULT_PASS=rabbitmq
+    ports:
+      - "5673:5672"
+      - "15672:15672"
+  worker:
+    build:
+      context: .
+    hostname: task_worker
+    entrypoint: celery
+    command: -A worker worker -l info --pool=solo
+    volumes:
+      - .:/app
+    links:
+      - rabbit
+    depends_on:
+      - rabbit
+  db:
+    image: mongo:latest
+    hostname: test_mongodb
+    environment:
+      - MONGO_INITDB_DATABASE=task_db
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=pass
+    volumes:
+      - ./mongo-data:/data/db
+    ports:
+      - 27017:27017
+volumes:
+  mongo-data:

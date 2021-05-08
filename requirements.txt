@@ -1,0 +1,4 @@
+flask
+pymongo
+amqp
+celery
